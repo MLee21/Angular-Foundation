@@ -45,7 +45,7 @@ controller: FilmsCtrl
     <dt>Characters</dt>
     <dd ng-repeat="character in film.characters"
       ui-sref="people({ id:(character | lastdir), p:''})">
-      {{character}}
+      <span get-prop prop="'name'" url="character">{{character}}</span>
     </dd>
   </dl>
 </div>

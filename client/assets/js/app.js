@@ -53,6 +53,23 @@
       return (!!input) ? input.split('/').slice(-2, -1)[0] : '';
     }
   })
+  .directive("getProp", ["$http", "$filter", function($http, $filter) {
+    return {
+      template: "{{property}}",
+      scope: {
+        prop: "=",
+        url: '='
+      },
+      link: function(scope, element, attrs) {
+        var capitalize = $filter('capitalize');
+        $http.get(scope.url, { cache: true }).then(function(result) {
+          scope.property = capitalize(result.data[scope.prop]);
+          }, function(err) {
+            scope.property = "Unknown";
+        });
+      }
+    }
+  }])
     .config(config)
     .run(run)
   ;
