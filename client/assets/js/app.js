@@ -41,6 +41,18 @@
       }
       return $scope;
     }])
+  .filter('capitalize', function() {
+    return function (input) {
+      return (!!input) ? input.replace(/([^\W_]+[^\s-]*) */g,
+        function(text) {return text.charAt(0).toUpperCase() +
+          text.substr(1)}) : '';
+    }
+  })
+  .filter('lastdir', function (){
+    return function (input) {
+      return (!!input) ? input.split('/').slice(-2, -1)[0] : '';
+    }
+  })
     .config(config)
     .run(run)
   ;
