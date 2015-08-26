@@ -27,3 +27,25 @@ controller: FilmsCtrl
     To Page {{nextPage}}
   </a>
 </div>
+
+<div class="grid-content film"
+  ng-show="film" ng-init="crawl = 'false'">
+  <h1>Episode {{film.episode_id | uppercase}}: 
+    {{film.title}}</h1>
+  <hr>
+  <dl>
+    <dt>Opening Crawl</dt>
+    <dd ng-class="{'crawl':crawl === true}" 
+      ng-click="crawl === true ? crawl = false : crawl = true">
+      {{film.opening_crawl}}</dd>
+    <dt>Director</dt>
+    <dd>{{film.director | capitalize}}</dd>
+    <dt>Producer</dt>
+    <dd>{{film.producer | capitalize}}</dd>
+    <dt>Characters</dt>
+    <dd ng-repeat="character in film.characters"
+      ui-sref="people({ id:(character | lastdir), p:''})">
+      {{character}}
+    </dd>
+  </dl>
+</div>
