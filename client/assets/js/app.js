@@ -10,37 +10,21 @@
     'foundation.dynamicRouting',
     'foundation.dynamicRouting.animations'
   ])
-  .controller('FilmsCtrl', [
-    "$scope",
-    "$state",
-    "$http",
-    function($scope, $state, $http) {
-      $scope.id = ($state.params.id || '');
-      $scope.page = ($state.paramsp || 1);
-      if ($scope.page == 1) {
-        if ($scope.id != '') {
-          $http.get("http://swapi.co/api/"+'films'+"/"+$scope.id,
-            { cache: true })
-          .success(function(data) {
-            $scope['film'] = data;
-          })
-        } else {
-          $http.get("http://swapi.co/api/"+'films'+"/", { cache: true })
-          .success(function(data) {
-            $scope['films'] = data;
-            if (data['next']) $scope.nextPage = 2;
-          });
-        }
-      } else {
-        $http.get("http://swapi.co/api/"+'films'+"/?page="+$scope.page,
-          { cache: true }).success(function(data) {
-            $scope['films'] = data;
-            if (data['next']) $scope.nextPage = 1*$scope.page + 1;
-          });
-          $scope.prevPage = 1*$scope.page - 1;
-      }
-      return $scope;
-    }])
+  .controller('FilmsCtrl', function($scope, $state, $http) {
+    $scope = genericController($scope, $state, $http, 'films', 'film');
+  })
+  .controller('SpeciesCtrl', function($scope, $state, $http){
+  $scope = genericController($scope, $state, $http, 'species', 'specie');
+  })
+  .controller('PlanetsCtrl', function($scope, $state, $http){
+    $scope = genericController($scope, $state, $http, 'planets', 'planet');
+  })
+  .controller('PeopleCtrl', function($scope, $state, $http){
+    $scope = genericController($scope, $state, $http, 'people', 'person');
+  })
+  .controller('StarshipsCtrl', function($scope, $state, $http){
+    $scope = genericController($scope, $state, $http, 'starships', 'starship');
+  })
   .filter('capitalize', function() {
     return function (input) {
       return (!!input) ? input.replace(/([^\W_]+[^\s-]*) */g,
@@ -91,4 +75,79 @@
     FastClick.attach(document.body);
   }
 
+  function genericController($scope, $state, $http, multiple, single) {
+    $scope.id = ($state.params.id || '');
+    $scope.page = ($state.params.p || 1);
+
+    // Use Aerobatic's caching if we're on that server
+    var urlApi = "http://swapi.co/api/"+multiple+"/"+$scope.id+"?page="+$scope.page,
+      queryParams = {
+        cache: true
+      };
+
+    if (window.location.hostname.match('aerobaticapp')) {
+      queryParams = {
+        params: {
+          url: urlApi,
+          cache: 1,
+          ttl: 30000 // cache for 500 minutes
+        }
+      }
+      urlApi = '/proxy';
+    }
+
+    if ($scope.page == 1) {
+      if ($scope.id != '') {
+        // We've got a URL parameter, so let's get the single entity's data
+        $http.get(urlApi, queryParams)
+          .success(function(data) {
+            // The HTTP GET only works if it's referencing an ng-repeat'ed array for some reason...
+            if (data.homeworld) data.homeworld = [data.homeworld];
+
+            $scope[single] = data;
+
+            var name = data.name;
+            if (single == 'film') name = data.title;
+            // Get an image from a Google Custom Search (this API key only works on localhost & aerobaticapp.com)
+            var googleUrl = 'https://www.googleapis.com/customsearch/v1?cx=001000040755652345309%3Aosltt3fexvk&q='+encodeURIComponent(name)+'&imgSize=large&num=1&fileType=jpg&key=AIzaSyBDvUGYCJfOyTNoJzk-5P9vE-dllx-Wne4',
+              googleParams = { cache: true };
+
+            if (window.location.hostname.match('aerobaticapp')) {
+              googleParams = {
+                params: {
+                  url: googleUrl,
+                  cache: 1,
+                  ttl: 300000 // cache for 5000 minutes
+                }
+              }
+              googleUrl = '/proxy';
+            }
+
+            $http.get(googleUrl, googleParams)
+            .then(function(result) {
+              $scope.imageUrl = result.data.items[0].pagemap.cse_image[0].src;
+            }, function(err) {
+              $scope.imageUrl = "Unknown";
+            });
+          })
+
+      } else {
+        // We're on page 1, so thet next page is 2.
+        $http.get(urlApi, queryParams)
+        .success(function(data) {
+          $scope[multiple] = data;
+          if (data['next']) $scope.nextPage = 2;
+        });
+      }
+    } else {
+      // If there's a next page, let's add it. Otherwise just add the previous page button.
+      $http.get(urlApi, queryParams)
+      .success(function(data) {
+        $scope[multiple] = data;
+        if (data['next']) $scope.nextPage = 1*$scope.page + 1;
+      });
+      $scope.prevPage = 1*$scope.page - 1;
+    }
+    return $scope;
+  }
 })();
